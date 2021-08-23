@@ -30,6 +30,11 @@ export class MentionsComponent implements OnInit {
   @Input() searchRegexp = /^\w*$/;
 
   /**
+   * whether to use static placed overlay or cdk overlay
+   */
+  @Input() useCDKOverlay = false;
+
+  /**
    * Whether to close the menu when the host textInputElement loses focus
    */
   @Input() closeMenuOnBlur = false;

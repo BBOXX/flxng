@@ -260,7 +260,7 @@ export class TextInputHighlightComponent implements OnChanges, OnDestroy {
       .sort((tagA, tagB) => {
         return tagA.indices.start - tagB.indices.start;
       })
-      .forEach((tag) => {
+      .forEach((tag, index) => {
         if (tag.indices.start > tag.indices.end) {
           throw new Error(
             `Highlight tag with indices [${tag.indices.start}, ${tag.indices.end}] cannot start after it ends.`
@@ -284,7 +284,7 @@ export class TextInputHighlightComponent implements OnChanges, OnDestroy {
           const before = textInputValue.slice(previousIndex, tag.indices.start);
           parts.push(escapeHtml(before));
           const cssClass = tag.cssClass || this.tagCssClass;
-          const tagId = tagIndexIdPrefix + this.tags.indexOf(tag);
+          const tagId = tagIndexIdPrefix + index;
           // flx-text-highlight-tag-id-${id} is used instead of a data attribute to prevent an angular sanitization warning
           parts.push(`<span class="flx-text-highlight-tag ${tagId} ${cssClass}">${escapeHtml(tagContents)}</span>`);
           prevTags.push(tag);

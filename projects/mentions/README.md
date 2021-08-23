@@ -1,6 +1,12 @@
 
 # Angular @Mentions Component
-**@flxng/mentions**
+**@bboxx/mentions**
+
+An extension of the awesome [@flxng/mentions's](https://github.com/seidme/flxng) library, with optional support to use cdk overlay for rendering overlay and few critical bug fixes like:
+
+1. [Open Issue #33 for @flxng/mentions](https://github.com/seidme/flxng/issues/33),
+2. choice selection doesn't work with closeMenuOnBlur=true
+3. multiple scrollbar appearance for both highlight and autocomplete components.
 
 Flexible, lightweight, easy-to-use, without external dependencies - Mentions component for Angular.
 
@@ -14,12 +20,12 @@ https://flxng.codeeve.com/#/mentions
 ## Getting Started
 Installation:
 ```bash
-$ npm i @flxng/mentions
+$ npm i @bboxx/mentions
 ```
 
 After importing the module the lib is ready to use:
 ```typescript
-import { MentionsModule } from '@flxng/mentions';
+import { MentionsModule } from '@bboxx/mentions';
 
 @NgModule({
   imports: [MentionsModule],
@@ -42,6 +48,7 @@ Name | Description | Type | Default
 `closeMenuOnBlur` | Whether to close the menu when the host `textInputElement` loses focus. | `boolean` | `false`
 `selectedChoices` | Pre-set choices for edit text mode, or to select/mark choices from outside the mentions component. | `any[]` | `[]`
 `tagCssClass` | The CSS class to add to highlighted tags. | `string` | `''`
+`useCDKOverlay` | Boolean to control whether overlay should be displayed using pure CSS or using @angular/cdk Overlay implementation. | `boolean` | `false`
 
 ### @Outputs
 Name | Description | Output type

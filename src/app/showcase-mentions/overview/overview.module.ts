@@ -15,6 +15,7 @@ import { OverviewBComponent } from './overview-b/overview-b.component';
 import { OverviewCComponent } from './overview-c/overview-c.component';
 import { OverviewDComponent } from './overview-d/overview-d.component';
 import { OverviewEComponent } from './overview-e/overview-e.component';
+import { TagTextareaComponent } from './tag-textarea/tag-textarea.component';
 
 @NgModule({
   declarations: [
@@ -24,6 +25,7 @@ import { OverviewEComponent } from './overview-e/overview-e.component';
     OverviewCComponent,
     OverviewDComponent,
     OverviewEComponent,
+    TagTextareaComponent
   ],
   imports: [
     CommonModule,

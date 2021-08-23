@@ -10,7 +10,10 @@ import {
   Renderer2,
   SimpleChanges,
   TemplateRef,
+  ViewChild,
 } from '@angular/core';
+import { CdkPortal } from '@angular/cdk/portal';
+import { ConnectionPositionPair, Overlay, OverlayConfig, OverlayRef, PositionStrategy } from '@angular/cdk/overlay';
 
 import { getCaretCoordinates } from './textarea-caret-position';
 // @ts-ignore
@@ -18,6 +21,7 @@ import { getCaretCoordinates } from './textarea-caret-position';
 
 export interface ChoiceWithIndices {
   choice: any;
+  occurence: number;
   indices: {
     start: number;
     end: number;
@@ -30,6 +34,8 @@ export interface ChoiceWithIndices {
   styleUrls: ['./text-input-autocomplete.component.scss'],
 })
 export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDestroy {
+  @ViewChild('menuPortal', { static: true }) menuPortal: CdkPortal;
+
   /**
    * Reference to the text input element.
    */
@@ -50,6 +56,11 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
    * No match will hide the menu.
    */
   @Input() searchRegexp = /^\w*$/;
+
+  /**
+   * whether to use static placed overlay or cdk overlay
+   */
+  @Input() useCDKOverlay?: boolean;
 
   /**
    * Whether to close the menu when the host textInputElement loses focus.
@@ -113,8 +124,9 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
     triggerCharacterPosition: number;
     lastCaretPosition?: number;
   };
+  private overlayRef: OverlayRef;
 
-  constructor(private ngZone: NgZone, private renderer: Renderer2) {}
+  constructor(private ngZone: NgZone, private renderer: Renderer2, private overlay: Overlay) {}
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.selectedChoices) {
@@ -133,13 +145,14 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
             this._selectedCwis = this.selectedChoices.map((c) => {
               return {
                 choice: c,
+                occurence: -1,
                 indices: { start: -1, end: -1 },
               };
             });
             this.updateIndices();
 
             // Remove choices that index couldn't be found for
-            this._selectedCwis = this._selectedCwis.filter((cwi) => cwi.indices.start > -1);
+            this._selectedCwis = this._selectedCwis.filter((cwi) => cwi.indices.start > -1 && cwi.occurence > -1);
 
             if (JSON.stringify(this._selectedCwis) !== selectedCwisPrevious) {
               // TODO: Should check for indices change only (ignoring the changes inside choice object)
@@ -186,12 +199,12 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
       // backspace or delete
       const cwiToEdit = this._selectedCwis.find((cwi) => {
         const label = this.getChoiceLabel(cwi.choice);
-        const labelEndIndex = this.getChoiceIndex(label) + label.length;
+        const labelEndIndex = this.getChoiceIndex(label, cwi.occurence) + label.length;
         return cursorPosition === labelEndIndex;
       });
 
       if (cwiToEdit) {
-        this.editChoice(cwiToEdit.choice);
+        this.editChoice(cwiToEdit);
       }
     }
   }
@@ -247,7 +260,9 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
     this.menuCtrl.lastCaretPosition = this.textInputElement.selectionStart;
 
     if (this.closeMenuOnBlur) {
-      this.hideMenu();
+      setTimeout(() => {
+        this.hideMenu();
+      }, 100);
     }
   }
 
@@ -269,19 +284,47 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
     }
   }
 
+  private getPositionStrategy(caretY: number, caretX: number, lineHeight: number): PositionStrategy {
+    const { top: elY, left: elX } = this.textInputElement.getBoundingClientRect();
+    const height = this.textInputElement.offsetHeight;
+
+    const point = {
+      y: elY + ((caretY > height ? caretY + lineHeight : caretY + lineHeight / 2) % height),
+      x: elX + caretX,
+    };
+    // console.log('caretX: ', caretX, ', caretY: ', caretY);
+    // console.log('height: ', height, ', lineHeight: ', lineHeight);
+    // console.log('elX: ', elX, ', elY: ', elY);
+    // console.log('point: ', point);
+    return this.overlay
+      .position()
+      .flexibleConnectedTo(point)
+      .withFlexibleDimensions(false)
+      .withPositions([
+        new ConnectionPositionPair({ originX: 'start', originY: 'bottom' }, { overlayX: 'start', overlayY: 'top' }),
+        new ConnectionPositionPair({ originX: 'start', originY: 'top' }, { overlayX: 'start', overlayY: 'bottom' }),
+      ])
+      .withPush(true);
+  }
+
   private hideMenu() {
     if (!this.menuCtrl) {
       return;
     }
 
     this.menuCtrl = undefined;
+    if (this.useCDKOverlay) {
+      this.overlayRef.detach();
+    }
     this.menuHide.emit();
 
     if (this._editingCwi) {
       // If user didn't make any changes to it, add it back to the selected choices
       const label = this.getChoiceLabel(this._editingCwi.choice);
-      const labelExists = this.getChoiceIndex(label + ' ') > -1;
-      const choiceExists = this._selectedCwis.find((cwi) => this.getChoiceLabel(cwi.choice) === label);
+      const labelExists = this.getChoiceIndex(label + ' ', this._editingCwi.occurence) > -1;
+      const choiceExists = this._selectedCwis.find(
+        (cwi) => this.getChoiceLabel(cwi.choice) === label && cwi.occurence === this._editingCwi.occurence
+      );
       if (labelExists && !choiceExists) {
         this.addToSelected(this._editingCwi);
         this.updateIndices();
@@ -314,7 +357,28 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
       triggerCharacterPosition: this.textInputElement.selectionStart,
     };
 
+    if (this.useCDKOverlay) {
+      if (this.overlayRef) {
+        this.overlayRef.detach();
+      }
+      setTimeout(() => {
+        this.overlayRef = this.overlay.create(
+          new OverlayConfig({
+            positionStrategy: this.getPositionStrategy(top, left, lineHeight),
+            scrollStrategy: this.overlay.scrollStrategies.close(),
+          })
+        );
+        this.overlayRef.attach(this.menuPortal);
+      });
+    }
+
     this.menuShow.emit();
+  }
+
+  private getOccurenceCount(label: string) {
+    return (this._selectedCwis || []).reduce((count, cwi) => {
+      return this.getChoiceLabel(cwi.choice) === label ? count + 1 : count;
+    }, 0);
   }
 
   selectChoice = (choice: any) => {
@@ -331,9 +395,11 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
     const setCursorAt = (start + insertValue).length;
     this.textInputElement.setSelectionRange(setCursorAt, setCursorAt);
     this.textInputElement.focus();
+    const occurence = this.getOccurenceCount(label) + 1;
 
     const choiceWithIndices = {
       choice,
+      occurence,
       indices: {
         start: startIndex,
         end: startIndex + label.length,
@@ -347,12 +413,12 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
     this.hideMenu();
   };
 
-  editChoice(choice: any): void {
-    const label = this.getChoiceLabel(choice);
-    const startIndex = this.getChoiceIndex(label);
-    const endIndex = startIndex + label.length;
+  editChoice(cwiToEdit: ChoiceWithIndices): void {
+    const label = this.getChoiceLabel(cwiToEdit.choice);
+    const startIndex = cwiToEdit.indices.start;
+    const endIndex = cwiToEdit.indices.end;
 
-    this._editingCwi = this._selectedCwis.find((cwi) => this.getChoiceLabel(cwi.choice) === label);
+    this._editingCwi = cwiToEdit;
     this.removeFromSelected(this._editingCwi);
     this.selectedChoicesChange.emit(this._selectedCwis);
 
@@ -370,7 +436,7 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
   dumpNonExistingChoices(): void {
     const choicesToDump = this._selectedCwis.filter((cwi) => {
       const label = this.getChoiceLabel(cwi.choice);
-      return this.getChoiceIndex(label) === -1;
+      return this.getChoiceIndex(label, cwi.occurence) === -1;
     });
 
     if (choicesToDump.length) {
@@ -384,8 +450,10 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
   retrieveExistingChoices(): void {
     const choicesToRetrieve = this._dumpedCwis.filter((dcwi) => {
       const label = this.getChoiceLabel(dcwi.choice);
-      const labelExists = this.getChoiceIndex(label) > -1;
-      const choiceExists = this._selectedCwis.find((scwi) => this.getChoiceLabel(scwi.choice) === label);
+      const labelExists = this.getChoiceIndex(label, dcwi.occurence) > -1;
+      const choiceExists = this._selectedCwis.find(
+        (scwi) => this.getChoiceLabel(scwi.choice) === label && scwi.occurence === dcwi.occurence
+      );
       return labelExists && !choiceExists;
     });
 
@@ -398,8 +466,9 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
   }
 
   addToSelected(cwi: ChoiceWithIndices): void {
+    const label = this.getChoiceLabel(cwi.choice);
     const exists = this._selectedCwis.some(
-      (scwi) => this.getChoiceLabel(scwi.choice) === this.getChoiceLabel(cwi.choice)
+      (scwi) => this.getChoiceLabel(scwi.choice) === label && scwi.occurence === cwi.occurence
     );
 
     if (!exists) {
@@ -410,7 +479,7 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
 
   removeFromSelected(cwi: ChoiceWithIndices): void {
     const exists = this._selectedCwis.some(
-      (scwi) => this.getChoiceLabel(scwi.choice) === this.getChoiceLabel(cwi.choice)
+      (scwi) => this.getChoiceLabel(scwi.choice) === this.getChoiceLabel(cwi.choice) && scwi.occurence === cwi.occurence
     );
 
     if (exists) {
@@ -440,19 +509,22 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
     return parseFloat(lineHeightStr);
   }
 
-  getChoiceIndex(label: string): number {
+  getChoiceIndex(label: string, occurence: number): number {
     const text = this.textInputElement && this.textInputElement.value;
     const labels = this._selectedCwis.map((cwi) => this.getChoiceLabel(cwi.choice));
 
-    return getChoiceIndex(text, label, labels);
+    return getChoiceIndex(text, label, occurence, labels);
   }
 
   updateIndices(): void {
+    const occurenceMap = {};
     this._selectedCwis = this._selectedCwis.map((cwi) => {
       const label = this.getChoiceLabel(cwi.choice);
-      const index = this.getChoiceIndex(label);
+      occurenceMap[label] = occurenceMap[label] === undefined ? 1 : occurenceMap[label] + 1;
+      const index = this.getChoiceIndex(label, occurenceMap[label]);
       return {
         choice: cwi.choice,
+        occurence: occurenceMap[label],
         indices: {
           start: index,
           end: index + label.length,
@@ -462,7 +534,7 @@ export class TextInputAutocompleteComponent implements OnChanges, OnInit, OnDest
   }
 }
 
-export function getChoiceIndex(text: string, label: string, labels: string[]): number {
+export function getChoiceIndex(text: string, label: string, occurence: number = 1, labels: string[] = []): number {
   text = text || '';
 
   labels.forEach((l) => {
@@ -473,7 +545,7 @@ export function getChoiceIndex(text: string, label: string, labels: string[]): n
     }
   });
 
-  return findStringIndex(text, label, (startIndex, endIndex) => {
+  return findStringIndex(text, label, occurence, (startIndex, endIndex) => {
     // Only labels that are preceded with below defined chars are valid,
     // (avoid 'labels' found in e.g. links being mistaken for choices)
     const precedingChar = text[startIndex - 1];
@@ -489,11 +561,16 @@ export function precedingCharValid(char: string): boolean {
 export function findStringIndex(
   text: string,
   value: string,
+  occurence: number,
   callback: (startIndex: number, endIndex: number) => boolean
 ): number {
   let index = text.indexOf(value);
   if (index === -1) {
     return -1;
+  }
+  while (occurence > 1) {
+    index = text.indexOf(value, index + 1);
+    --occurence;
   }
 
   let conditionMet = callback(index, index + value.length);

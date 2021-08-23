@@ -1,5 +1,8 @@
-<div *ngIf="menuCtrl"
-     class="menu-template-container"
-     [style.top]="menuCtrl.position.top + 'px'"
-     [style.left]="menuCtrl.position.left + 'px'">
-  <ng-container *ngTemplateOutlet="menuTemplate; context: menuCtrl.context"></ng-container>
+<div *ngIf="menuCtrl && !useCDKOverlay" class="menu-template-container" [style.top]="menuCtrl.position.top + 'px'"
+   [style.left]="menuCtrl.position.left + 'px'">
+   <ng-container *ngTemplateOutlet="menuTemplate; context: menuCtrl.context"></ng-container>
+</div>
+
+<ng-template cdk-portal #menuPortal="cdkPortal">
+   <ng-container *ngTemplateOutlet="menuTemplate; context: menuCtrl.context"></ng-container>
+</ng-template>

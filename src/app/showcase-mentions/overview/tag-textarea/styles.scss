@@ -1,0 +1,64 @@
+$blueLight: #cbedf9;
+
+
+.relative-block-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  textarea {
+    width: 100%;
+  }
+}
+
+.mention-menu {
+  min-width: 11em;
+  padding: 0.5em 0;
+  font-size: 12px;
+  color: #212529;
+  text-align: left;
+  list-style: none;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.25em;
+
+  display: block;
+  height: auto;
+  max-height: 292px;
+  min-height: 48px;
+  /* fits 11 items with 14px font-size */
+  overflow: auto;
+
+  .mention-item {
+    clear: both;
+    background-color: transparent;
+    border: 0;
+
+
+    color: rgba(0, 0, 0, 0.87);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 16px;
+    text-align: left;
+    text-decoration: none;
+    position: relative;
+    cursor: pointer;
+    outline: none;
+    display: flex;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+    font-size: inherit;
+    line-height: 3em;
+    height: 3em;
+
+    &:hover,
+    &:focus {
+      background: $blueLight;
+    }
+  }
+}

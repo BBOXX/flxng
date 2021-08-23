@@ -21,46 +21,46 @@
     ],
     "paths": {
       "@flxng/common": [
-        "../projects/common/src/lib"
+        "./projects/common/src/lib"
       ],
       "@flxng/common/*": [
-        "../projects/common/src/lib/*"
+        "./projects/common/src/lib/*"
       ],
       "@flxng/code-show": [
-        "../projects/code-show/src/lib"
+        "./projects/code-show/src/lib"
       ],
       "@flxng/code-show/*": [
-        "../projects/code-show/src/lib/*"
+        "./projects/code-show/src/lib/*"
       ],
       "@flxng/circle-timer": [
-        "../projects/circle-timer/src/lib"
+        "./projects/circle-timer/src/lib"
       ],
       "@flxng/circle-timer/*": [
-        "../projects/circle-timer/src/lib/*"
+        "./projects/circle-timer/src/lib/*"
       ],
       "@flxng/loader": [
-        "../projects/loader/src/lib"
+        "./projects/loader/src/lib"
       ],
       "@flxng/loader/*": [
-        "../projects/loader/src/lib/*"
+        "./projects/loader/src/lib/*"
       ],
       "@flxng/paginator": [
-        "../projects/paginator/src/lib"
+        "./projects/paginator/src/lib"
       ],
       "@flxng/paginator/*": [
-        "../projects/paginator/src/lib/*"
+        "./projects/paginator/src/lib/*"
       ],
       "@flxng/treetable": [
-        "../projects/treetable/src/lib"
+        "./projects/treetable/src/lib"
       ],
       "@flxng/treetable/*": [
-        "../projects/treetable/src/lib/*"
+        "./projects/treetable/src/lib/*"
       ],
       "@flxng/mentions": [
-        "../projects/mentions/src/lib"
+        "./projects/mentions/src/lib"
       ],
       "@flxng/mentions/*": [
-        "../projects/mentions/src/lib/*"
+        "./projects/mentions/src/lib/*"
       ]
     }
   },

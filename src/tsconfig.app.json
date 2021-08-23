@@ -4,7 +4,51 @@
     "outDir": "../out-tsc/app",
     "baseUrl": "./",
     "module": "esnext",
-    "types": []
+    "types": [],
+    "paths": {
+      "@flxng/common": [
+        "../projects/common/src/lib"
+      ],
+      "@flxng/common/*": [
+        "../projects/common/src/lib/*"
+      ],
+      "@flxng/code-show": [
+        "../projects/code-show/src/lib"
+      ],
+      "@flxng/code-show/*": [
+        "../projects/code-show/src/lib/*"
+      ],
+      "@flxng/circle-timer": [
+        "../projects/circle-timer/src/lib"
+      ],
+      "@flxng/circle-timer/*": [
+        "../projects/circle-timer/src/lib/*"
+      ],
+      "@flxng/loader": [
+        "../projects/loader/src/lib"
+      ],
+      "@flxng/loader/*": [
+        "../projects/loader/src/lib/*"
+      ],
+      "@flxng/paginator": [
+        "../projects/paginator/src/lib"
+      ],
+      "@flxng/paginator/*": [
+        "../projects/paginator/src/lib/*"
+      ],
+      "@flxng/treetable": [
+        "../projects/treetable/src/lib"
+      ],
+      "@flxng/treetable/*": [
+        "../projects/treetable/src/lib/*"
+      ],
+      "@flxng/mentions": [
+        "../projects/mentions/src/lib"
+      ],
+      "@flxng/mentions/*": [
+        "../projects/mentions/src/lib/*"
+      ]
+    }
   },
   "exclude": [
     "test.ts",

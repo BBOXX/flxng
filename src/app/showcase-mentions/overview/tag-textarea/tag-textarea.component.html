@@ -1,0 +1,34 @@
+<div class="relative-block-container">
+  <textarea #textareaRef
+            [(ngModel)]="value"
+            [placeholder]="label"
+            [disabled]="isDisabled"
+            (ngModelChange)="onChange()"
+            (blur)="onBlur()">
+          </textarea>
+  <flx-mentions [textInputElement]="textareaRef"
+                [menuTemplate]="menuTemplate"
+                [triggerCharacter]="'['"
+                [closeMenuOnBlur]="false"
+                [useCDKOverlay]="true"
+                [getChoiceLabel]="getTagLabel"
+                [selectedChoices]="getSelectedTags()"
+                (search)="filterTags($event)"
+                (selectedChoicesChange)="onSelectedTagsChange($event)"
+                (menuHide)="onMenuHide()"
+                [tagCssClass]="'highlight-tag'">
+  </flx-mentions>
+
+  <ng-template #menuTemplate
+               let-selectChoice="selectChoice">
+    <ul *ngIf="filteredTags?.length"
+        class="mention-menu">
+      <li *ngFor="let tag of filteredTags;"
+          (click)="selectChoice(tag)"
+          class="mention-item"
+          [title]="tag.name">
+        {{tag.name}}
+      </li>
+    </ul>
+  </ng-template>
+</div>
